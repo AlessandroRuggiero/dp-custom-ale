@@ -1,4 +1,4 @@
 {
-    "default_name": "default",
-    "description": "Default registry"
+    "default_name": "custom-ale",
+    "description": "Alessandro Ruggiero's custom packages"
 }
