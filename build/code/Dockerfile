@@ -58,6 +58,13 @@ RUN for ext in ${VSCODE_EXTENSIONS}; do \
     rm -rf /tmp/vscode-build && \
     chmod -R a+rX /opt/vscode-extensions
 
+# The workspace arrives as a bind mount whose owning UID need not match the
+# penguin user inside the namespace. Git then refuses the repo with "detected
+# dubious ownership", VS Code's SCM provider fails silently, and the explorer
+# shows no M/U badges or colours. --system so it holds whatever UID the
+# entrypoint remaps penguin to at runtime.
+RUN git config --system --add safe.directory /workspace
+
 COPY setup-penguin.sh /usr/local/bin/setup-penguin.sh
 RUN /usr/local/bin/setup-penguin.sh
 
