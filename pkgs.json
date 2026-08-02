@@ -1,6 +1,6 @@
 {
     "code": {
-        "container": "ghcr.io/alessandroruggiero/disguised-penguin-repo/code:main",
+        "container": "ghcr.io/alessandroruggiero/dp-custom-ale/code:main",
         "configmounts": {
             "vscodeconfig": "/home/penguin/.vscode-container/",
             "config": "/home/penguin/.config/",
