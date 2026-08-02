@@ -56,7 +56,9 @@ RUN for ext in ${VSCODE_EXTENSIONS}; do \
             --install-extension "$ext"; \
     done && \
     rm -rf /tmp/vscode-build && \
-    chmod -R a+rX /opt/vscode-extensions
+    chmod -R a+rX /opt/vscode-extensions && \
+    (echo "${VSCODE_EXTENSIONS}"; find /opt/vscode-extensions -type f | sort | wc -l) \
+        > /opt/vscode-extensions/.bundle-id
 
 # The workspace arrives as a bind mount whose owning UID need not match the
 # penguin user inside the namespace. Git then refuses the repo with "detected

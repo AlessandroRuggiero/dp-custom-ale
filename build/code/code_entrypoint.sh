@@ -35,14 +35,40 @@ DATA_DIR="${HOME}/.vscode-container/data"
 EXTENSIONS_DIR="${HOME}/.vscode-container/extensions"
 BUNDLED_EXTENSIONS=/opt/vscode-extensions
 
-# First-run seeding. Both dirs above are persisted config mounts, so the
-# extensions baked into the image at build time have to be copied in here
-# rather than shipped in place. Only done while the mounted extensions dir
-# is still virgin (no extensions.json) — after that the user's own
-# installs and removals are authoritative and never get second-guessed.
-if [ -d "${BUNDLED_EXTENSIONS}" ] && [ ! -e "${EXTENSIONS_DIR}/extensions.json" ]; then
+# Seeding. Both dirs above are persisted config mounts, so extensions baked
+# into the image at build time have to be copied in here rather than shipped
+# in place.
+#
+# The image stamps a bundle id next to its extensions; we re-seed whenever
+# the copy in the mount doesn't carry the same one. That covers a fresh
+# mount, a new image version, and — the reason this isn't just a first-run
+# check — a copy that died halfway through and left a half-populated icons
+# directory, which renders as blank squares in the explorer rather than as
+# an obvious failure.
+#
+# Only the bundled extension directories are touched; anything the user
+# installed themselves is left alone.
+if [ -d "${BUNDLED_EXTENSIONS}" ] &&
+   ! cmp -s "${BUNDLED_EXTENSIONS}/.bundle-id" "${EXTENSIONS_DIR}/.bundle-id"; then
+    echo "entrypoint: seeding bundled extensions into ${EXTENSIONS_DIR}" >&2
     mkdir -p "${EXTENSIONS_DIR}"
-    cp -R "${BUNDLED_EXTENSIONS}/." "${EXTENSIONS_DIR}/"
+
+    # Stage the whole copy first, then move each extension into place. A
+    # rename is atomic, so an interrupted run can never leave a partial
+    # extension behind, and .bundle-id lands only once every one is there.
+    staging="${EXTENSIONS_DIR}/.seed.$$"
+    rm -rf "${staging}"
+    mkdir -p "${staging}"
+    cp -R "${BUNDLED_EXTENSIONS}/." "${staging}/"
+
+    for bundled in "${staging}"/*/; do
+        name="$(basename "${bundled}")"
+        rm -rf "${EXTENSIONS_DIR:?}/${name}"
+        mv "${bundled}" "${EXTENSIONS_DIR}/${name}"
+    done
+
+    mv "${staging}/.bundle-id" "${EXTENSIONS_DIR}/.bundle-id"
+    rm -rf "${staging}"
 fi
 
 # Likewise, activate the bundled icon theme only if the user has no
