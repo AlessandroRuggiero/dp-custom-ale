@@ -8,9 +8,38 @@ if command -v apt-get > /dev/null 2>&1; then
     apt-get install -y gosu
     rm -rf /var/lib/apt/lists/*
 elif command -v dnf > /dev/null 2>&1; then
-    dnf install -y --setopt=install_weak_deps=False gosu shadow-utils
+    # Fedora ships no gosu package, so stand up a gosu-compatible shim over
+    # setpriv (util-linux-core) instead. entrypoint.sh is shared with the
+    # Debian images and calls `gosu penguin "$@"` unconditionally, so the
+    # interface has to exist under that name.
+    dnf install -y --setopt=install_weak_deps=False util-linux-core shadow-utils
     dnf clean all
     rm -rf /var/cache/dnf
+
+    cat > /usr/local/bin/gosu <<'GOSU_SHIM'
+#!/bin/sh
+# gosu(1) subset: gosu user[:group] command [args...]
+# setpriv execs in place rather than forking, matching gosu's signal and
+# exit-code behaviour for a PID 1 entrypoint.
+set -e
+
+spec="$1"
+shift
+
+user="${spec%%:*}"
+group="${spec#*:}"
+if [ "$group" = "$spec" ]; then
+    group="$user"
+fi
+
+# Real gosu sets HOME from the target user's passwd entry; nothing else here
+# does, and VS Code resolves its data dirs from it.
+HOME="$(getent passwd "$user" | cut -d: -f6)"
+export HOME
+
+exec setpriv --reuid "$user" --regid "$group" --init-groups -- "$@"
+GOSU_SHIM
+    chmod +x /usr/local/bin/gosu
 else
     echo "setup-penguin: no supported package manager (apt-get or dnf) found" >&2
     exit 1
