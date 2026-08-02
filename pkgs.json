@@ -1,0 +1,65 @@
+{
+    "code": {
+        "container": "ghcr.io/alessandroruggiero/disguised-penguin-repo/code:main",
+        "configmounts": {
+            "vscodeconfig": "/home/penguin/.vscode-container/",
+            "config": "/home/penguin/.config/",
+            "cache": "/home/penguin/.cache/"
+        },
+        "extra_run_args": [
+            {
+                "args": [
+                    "-e",
+                    "WAYLAND_DISPLAY=wayland-0",
+                    "-e",
+                    "XDG_RUNTIME_DIR=/run/user/1000",
+                    "--tmpfs",
+                    "/run/user/1000:rw,mode=1777,size=64m",
+                    "-v",
+                    "/run/user/1000/wayland-0:/run/user/1000/wayland-0"
+                ],
+                "description": "Passes your Wayland socket in so VS Code can open a window. The tmpfs gives VS Code a writable XDG_RUNTIME_DIR for its IPC socket; only the single compositor socket is shared, not the rest of /run/user"
+            },
+            {
+                "args": [
+                    "--device",
+                    "/dev/dri"
+                ],
+                "description": "GPU access for hardware-accelerated rendering; without it Electron falls back to software rendering or fails to start"
+            },
+            {
+                "args": [
+                    "--security-opt",
+                    "label=disable"
+                ],
+                "description": "Disables SELinux confinement for this container only. The Wayland socket is labelled user_tmp_t on the host, which a confined container cannot reach, so VS Code would fail to connect to your display"
+            },
+            {
+                "args": [
+                    "--tmpfs",
+                    "/dev/shm:rw,size=1g"
+                ],
+                "description": "Chromium uses shared memory for cross-process IPC and crashes once the 64MB default is exhausted"
+            },
+            {
+                "args": [
+                    "--security-opt",
+                    "no-new-privileges",
+                    "--cap-drop=ALL",
+                    "--cap-add=CHOWN",
+                    "--cap-add=DAC_OVERRIDE",
+                    "--cap-add=SETUID",
+                    "--cap-add=SETGID"
+                ],
+                "description": "Tightens the container beyond the default: drops every Linux capability except the four the entrypoint needs to remap the penguin user to your UID/GID and drop privileges, and blocks privilege escalation. This strengthens isolation rather than weakening it"
+            },
+            {
+                "args": [
+                    "--pids-limit=512",
+                    "--memory=4g"
+                ],
+                "description": "Caps runaway extensions or language servers at 4GB of RAM and 512 processes so they cannot exhaust your machine"
+            }
+        ]
+    }
+}

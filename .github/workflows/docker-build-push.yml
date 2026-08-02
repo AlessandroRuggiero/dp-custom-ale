@@ -1,0 +1,69 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Check for changed paths
+        uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'build/code/**'
+              - 'build/entrypoint.sh'
+              - 'build/setup-penguin.sh'
+
+  build-and-push:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.images != '[]' && needs.detect-changes.outputs.images != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      matrix:
+        image: ${{ fromJSON(needs.detect-changes.outputs.images) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4.5.2
+        if: github.event_name != 'pull_request'
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./build
+          file: ./build/${{ matrix.image }}/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          no-cache: true
+          platforms: linux/amd64
