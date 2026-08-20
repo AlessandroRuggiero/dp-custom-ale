@@ -5,21 +5,50 @@ on:
     branches:
       - main
   pull_request:
+  schedule:
+    # Daily. Dependabot tracks the Dockerfile, but the VS Code version and
+    # Fedora's in-place CVE rebuilds of the base tag are both invisible to
+    # it, so between commits nothing else would ever trigger a rebuild.
+    # 06:17 rather than 06:00 because on-the-hour crons sit in the most
+    # contended slot of GitHub's scheduler and get delayed the longest.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Rebuild even if nothing upstream has moved"
+        type: boolean
+        default: false
 
 env:
   REGISTRY: ghcr.io
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Superseded PR pushes are worth cancelling; a run that may be halfway
+  # through publishing :main is not.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  detect-changes:
+  detect:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     outputs:
-      images: ${{ steps.filter.outputs.changes }}
+      images: ${{ steps.collect.outputs.images }}
+      upstream_version: ${{ steps.upstream.outputs.upstream_version }}
+      base_digest: ${{ steps.upstream.outputs.base_digest }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      # paths-filter needs a before/after pair to diff against. Scheduled
+      # runs have neither: it would quietly report no changes and silently
+      # disable the nightly, so it only runs on events that carry a diff.
       - name: Check for changed paths
-        uses: dorny/paths-filter@v4
         id: filter
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             code:
@@ -27,17 +56,67 @@ jobs:
               - 'build/entrypoint.sh'
               - 'build/setup-penguin.sh'
 
+      # Runs on every event except pull requests. On a schedule it decides
+      # whether to build at all; on a push it supplies the labels that the
+      # next schedule compares against. Skipping the push case would
+      # publish an unlabelled image on every commit, and the next nightly
+      # would read that as "unknown version" and rebuild for nothing.
+      #
+      # The probe needs dnf, hence the Fedora container. It matches the
+      # Dockerfile's base only by coincidence — the script reads the real
+      # FROM line out of the mounted checkout.
+      - name: Probe upstream versions
+        id: upstream
+        if: github.event_name != 'pull_request'
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}/code
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD:/src:ro" \
+            -e IMAGE -e GHCR_USER -e GHCR_TOKEN -e FORCE \
+            fedora:43 /src/.github/scripts/check-upstream-code.sh \
+            | tee -a "$GITHUB_OUTPUT"
+
+      - name: Collect build matrix
+        id: collect
+        env:
+          CHANGED: ${{ steps.filter.outputs.changes }}
+          STALE: ${{ steps.upstream.outputs.stale }}
+          REASON: ${{ steps.upstream.outputs.reason }}
+        run: |
+          set -euo pipefail
+          case "${{ github.event_name }}" in
+            push | pull_request)
+              images="$CHANGED"
+              ;;
+            *)
+              # Only `code` has a probe script today. A second tool
+              # wanting scheduled rebuilds needs its own probe step and a
+              # per-tool split of the labels below.
+              if [ "$STALE" = "yes" ]; then images='["code"]'; else images='[]'; fi
+              echo "code: $REASON"
+              ;;
+          esac
+          echo "images=$images" >> "$GITHUB_OUTPUT"
+          echo "Matrix: $images"
+
   build-and-push:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.images != '[]' && needs.detect-changes.outputs.images != '' }}
+    needs: detect
+    if: ${{ needs.detect.outputs.images != '[]' && needs.detect.outputs.images != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    
+
     strategy:
+      # One tool failing shouldn't cancel the rest of a nightly sweep.
+      fail-fast: false
       matrix:
-        image: ${{ fromJSON(needs.detect-changes.outputs.images) }}
+        image: ${{ fromJSON(needs.detect.outputs.images) }}
 
     steps:
       - name: Checkout repository
@@ -64,6 +143,15 @@ jobs:
           file: ./build/${{ matrix.image }}/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          # dp.* is what the next scheduled run reads back to decide
+          # whether anything moved.
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            dp.upstream.version=${{ needs.detect.outputs.upstream_version }}
+            dp.base.digest=${{ needs.detect.outputs.base_digest }}
           no-cache: true
           platforms: linux/amd64
+          # Buildx would otherwise push an image index, and `skopeo inspect`
+          # on an index returns no Labels at all — the staleness check would
+          # read every published image as unlabelled and rebuild daily.
+          provenance: false
