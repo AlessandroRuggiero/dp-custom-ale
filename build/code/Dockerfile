@@ -4,7 +4,7 @@
 # extensions/npm/node tooling run inside it) from the host, using the
 # container boundary as the sandbox instead of Chromium's own setuid
 # sandbox (which can't init inside a rootless container anyway).
-FROM fedora:43
+FROM fedora:44
 
 # Microsoft's VS Code repo + the runtime libs Electron needs to talk to
 # a Wayland compositor. No X11 libs on purpose — if Ozone tried to fall
