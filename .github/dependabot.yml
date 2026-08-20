@@ -2,21 +2,9 @@ version: 2
 
 updates:
   - package-ecosystem: "docker"
-    directories:
-      - "/build/claude"
-      - "/build/codex"
-      - "/build/doctl"
-      - "/build/firebase"
-      - "/build/flutter"
-      - "/build/gcloud"
-      - "/build/gemini"
-      - "/build/gh"
-      - "/build/opencode"
-      - "/build/yt-dlp"
+    directory: "/build/code"
     schedule:
       interval: "daily"
-
-    open-pull-requests-limit: 20
 
     labels:
       - "dependencies"
@@ -26,19 +14,3 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-  
-  - package-ecosystem: "npm"
-    directories:
-      - "/build/claude"
-      - "/build/codex"
-      - "/build/doctl"
-      - "/build/firebase"
-      - "/build/gcloud"
-      - "/build/gemini"
-      - "/build/opencode"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 20
-    labels:
-      - "dependencies"
-      - "npm"
