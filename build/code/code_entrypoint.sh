@@ -84,8 +84,23 @@ fi
 # immediately — as PID 1 that exits the container and kills the app it
 # just launched (symptom: the ozone warning prints, then a clean exit and
 # no window). The binary below stays in the foreground.
+
+# Electron's safeStorage wants an OS keyring (org.freedesktop.secrets on the
+# session bus) to hold the key that encrypts stored secrets: GitHub tokens,
+# Settings Sync, extension credentials. This container has neither a session
+# bus nor a keyring daemon, deliberately — only the compositor socket is
+# shared in, so nothing here can reach the host's KWallet. Left to itself
+# Electron blocks startup on "An OS keyring couldn't be identified for storing
+# the encryption related data in your current desktop environment".
+#
+# --password-store=basic stops the search and encrypts with Chromium's own
+# built-in key instead. Weaker in the usual sense — that key is not secret —
+# but the ciphertext lands in --user-data-dir, which is a persisted mount, and
+# the alternative is mounting the host session bus in, handing the container
+# far more of the host than these tokens are worth.
 exec /usr/share/code/code \
     --no-sandbox \
+    --password-store=basic \
     --ozone-platform=wayland \
     --enable-features=UseOzonePlatform,WaylandWindowDecorations \
     --user-data-dir="${DATA_DIR}" \
