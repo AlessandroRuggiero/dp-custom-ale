@@ -1,0 +1,42 @@
+# Turns on auto-merge for Dependabot PRs that only touch build/claude.
+#
+# Auto-merge is a queue, not an immediate merge: GitHub holds the PR until the
+# branch's required status checks pass, then merges it unattended. With no
+# required checks configured on main, there is nothing to wait for and the PR
+# merges as soon as this workflow runs — see the note in README/PR description.
+name: Dependabot auto-merge
+
+on: pull_request
+
+# Dependabot-triggered runs get a read-only GITHUB_TOKEN unless the workflow
+# asks for more, and enabling auto-merge is a write to the PR.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    # Nothing in this job checks out or executes the PR's contents, so it is
+    # safe to hand it write scope; it only talks to the API about the PR.
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      # Rather than diffing changed files, ask Dependabot which manifest
+      # directory it was updating. Both the docker and npm ecosystems in
+      # .github/dependabot.yml are registered against this directory, so the
+      # one comparison covers base-image bumps and claude-code bumps alike.
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge
+        if: steps.metadata.outputs.directory == '/build/claude'
+        # --merge to match how PR #1 was merged; --squash and --rebase fail
+        # outright if the repo has that merge method disabled.
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -14,3 +14,25 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+
+  # The Dockerfile's FROM line.
+  - package-ecosystem: "docker"
+    directory: "/build/claude"
+    schedule:
+      interval: "daily"
+
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # The pinned @anthropic-ai/claude-code version. It lives in package.json
+  # rather than in the Dockerfile precisely so this can bump it; the
+  # Dockerfile reads it back out at build time.
+  - package-ecosystem: "npm"
+    directory: "/build/claude"
+    schedule:
+      interval: "daily"
+
+    labels:
+      - "dependencies"
+      - "npm"

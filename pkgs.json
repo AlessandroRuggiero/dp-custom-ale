@@ -61,5 +61,15 @@
                 "description": "Caps runaway extensions or language servers at 4GB of RAM and 512 processes so they cannot exhaust your machine"
             }
         ]
+    },
+    "claude": {
+        "container": "ghcr.io/alessandroruggiero/dp-custom-ale/claude:main",
+        "configmounts": {
+            "dot_claude": "/home/penguin/.claude/",
+            "dot_claude_file": {
+                "path": "/home/penguin/.claude.json",
+                "type": "file"
+            }
+        }
     }
 }
