@@ -3,7 +3,7 @@
 # There is no Fedora equivalent of a node:26-slim base tag pinning the runtime
 # for us, so the Node version is a deliberate choice here — see the dnf line
 # below.
-FROM fedora:43
+FROM fedora:44
 
 # Claude Code checks for updates on startup and rewrites its own install; both
 # are pointless in an immutable image and just add latency to every run.
