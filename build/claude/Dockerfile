@@ -27,6 +27,9 @@ RUN dnf install -y --setopt=install_weak_deps=False \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
+COPY claude/install-packages.sh /usr/local/bin/install-packages.sh
+RUN sh /usr/local/bin/install-packages.sh
+
 # No argument: unlike the node:26-slim base there is no pre-existing `node`
 # user to rename, so the script takes its else branch and creates penguin
 # fresh. The script is distro-aware — on Fedora it also stands up the
