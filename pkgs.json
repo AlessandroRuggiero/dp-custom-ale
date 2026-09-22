@@ -55,10 +55,10 @@
             },
             {
                 "args": [
-                    "--pids-limit=512",
+                    "--pids-limit=4092",
                     "--memory=4g"
                 ],
-                "description": "Caps runaway extensions or language servers at 4GB of RAM and 512 processes so they cannot exhaust your machine"
+                "description": "Caps runaway extensions or language servers at 4GB of RAM and 4092 processes so they cannot exhaust your machine"
             }
         ]
     },
@@ -70,6 +70,15 @@
                 "path": "/home/penguin/.claude.json",
                 "type": "file"
             }
-        }
+        },
+        "extra_run_args": [
+            {
+                "args": [
+                    "--device",
+                    "nvidia.com/gpu=all"
+                ],
+                "description": "Exposes the host NVIDIA GPUs through CDI so PyTorch and other CUDA workloads can use them; without it torch.cuda.is_available() is false and training silently falls back to the CPU. Requires nvidia-container-toolkit on the host and a CDI spec generated with 'nvidia-ctk cdi generate'"
+            }
+        ]
     }
 }
