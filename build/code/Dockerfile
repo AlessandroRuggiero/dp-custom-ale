@@ -43,6 +43,7 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
         fontconfig \
         google-noto-sans-fonts \
         google-noto-sans-mono-fonts \
+        google-noto-color-emoji-fonts \
         dejavu-sans-mono-fonts \
         liberation-mono-fonts && \
     dnf clean all && \
