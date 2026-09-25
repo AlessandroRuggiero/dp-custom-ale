@@ -21,6 +21,8 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
         code \
         git \
         zsh \
+        zsh-autosuggestions \
+        zsh-syntax-highlighting \
         tar \
         gzip \
         xz \

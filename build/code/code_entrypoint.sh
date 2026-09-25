@@ -81,7 +81,9 @@ fi
 
 # Same rule for zsh: seed a .zshrc only if the user has none. Without any
 # .zshrc, zsh runs its new-user wizard in every terminal. zsh keeps no history
-# unless HISTFILE and SAVEHIST are set.
+# unless HISTFILE and SAVEHIST are set, and has only bare completion until
+# compinit runs. Plugin paths are where Fedora's packages install them;
+# syntax-highlighting has to be sourced last to see every other widget.
 if [ ! -e "${ZDOTDIR}/.zshrc" ]; then
     mkdir -p "${ZDOTDIR}"
     cat > "${ZDOTDIR}/.zshrc" <<'ZSHRC'
@@ -89,7 +91,14 @@ HISTFILE="${ZDOTDIR}/.zsh_history"
 HISTSIZE=10000
 SAVEHIST=10000
 
+autoload -Uz compinit && compinit
+zstyle ':completion:*' menu select
+
+source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+
 eval "$(starship init zsh)"
+
+source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 ZSHRC
 fi
 
