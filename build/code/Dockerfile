@@ -106,6 +106,9 @@ ENV NO_AT_BRIDGE=1
 # $HOME itself is not persisted, so ~/.zshrc and history would vanish with the
 # container. Keep zsh's dotfiles in the config mount instead.
 ENV ZDOTDIR=/home/penguin/.config/zsh
+# VS Code picks the terminal shell from $SHELL before the passwd entry, so
+# pin it too rather than rely on nothing upstream setting it.
+ENV SHELL=/bin/zsh
 
 WORKDIR /workspace
 
