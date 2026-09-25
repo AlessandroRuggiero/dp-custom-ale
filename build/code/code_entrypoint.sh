@@ -75,8 +75,22 @@ fi
 # settings.json at all; an existing one is left completely alone.
 if [ ! -e "${DATA_DIR}/User/settings.json" ]; then
     mkdir -p "${DATA_DIR}/User"
-    printf '{\n    "workbench.iconTheme": "material-icon-theme"\n}\n' \
+    printf '{\n    "workbench.iconTheme": "material-icon-theme",\n    "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font Mono"\n}\n' \
         > "${DATA_DIR}/User/settings.json"
+fi
+
+# Same rule for zsh: seed a .zshrc only if the user has none. Without any
+# .zshrc, zsh runs its new-user wizard in every terminal. zsh keeps no history
+# unless HISTFILE and SAVEHIST are set.
+if [ ! -e "${ZDOTDIR}/.zshrc" ]; then
+    mkdir -p "${ZDOTDIR}"
+    cat > "${ZDOTDIR}/.zshrc" <<'ZSHRC'
+HISTFILE="${ZDOTDIR}/.zsh_history"
+HISTSIZE=10000
+SAVEHIST=10000
+
+eval "$(starship init zsh)"
+ZSHRC
 fi
 
 # Exec the Electron binary directly, NOT the /usr/bin/code wrapper. That
