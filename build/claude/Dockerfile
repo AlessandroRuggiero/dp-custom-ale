@@ -20,6 +20,7 @@ ENV DISABLE_AUTOUPDATER=1
 # subpackage pins npm to the same stream as the nodejs package above it.
 RUN dnf install -y --setopt=install_weak_deps=False \
         git \
+        jq \
         less \
         shadow-utils \
         nodejs \
