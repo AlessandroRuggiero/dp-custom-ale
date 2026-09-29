@@ -39,4 +39,7 @@ jobs:
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Not GITHUB_TOKEN: a merge made with it fires no workflows, so the
+          # push to main would never rebuild the claude image. Dependabot runs
+          # only see Dependabot secrets, so this one must be stored there.
+          GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
