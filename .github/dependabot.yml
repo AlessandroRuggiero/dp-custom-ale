@@ -36,3 +36,14 @@ updates:
     labels:
       - "dependencies"
       - "npm"
+
+  # The Dockerfile's FROM line. The claude-desktop package itself comes from
+  # Anthropic's apt repo, which dependabot cannot see.
+  - package-ecosystem: "docker"
+    directory: "/build/claude-desktop"
+    schedule:
+      interval: "daily"
+
+    labels:
+      - "dependencies"
+      - "docker"

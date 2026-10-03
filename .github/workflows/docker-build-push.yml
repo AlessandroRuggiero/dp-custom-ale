@@ -60,6 +60,10 @@ jobs:
               - 'build/entrypoint.sh'
               - 'build/setup-penguin.sh'
               - 'build/install-npm-global-from-package-json.sh'
+            claude-desktop:
+              - 'build/claude-desktop/**'
+              - 'build/entrypoint.sh'
+              - 'build/setup-penguin.sh'
 
       # Runs on every event except pull requests. On a schedule it decides
       # whether to build at all; on a push it supplies the labels that the

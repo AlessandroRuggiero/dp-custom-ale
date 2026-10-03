@@ -6,6 +6,7 @@ Everything is automatically built and published on the GitHub container registry
 ## Available packages
 - `code` (VS Code, Wayland-only GUI)
 - `claude` (Claude Code CLI)
+- `claude-desktop` (Claude Desktop app, Wayland-only GUI)
 
 ## Structure
 - `build/<tool-name>/Dockerfile`: Dockerfiles for each tool.
