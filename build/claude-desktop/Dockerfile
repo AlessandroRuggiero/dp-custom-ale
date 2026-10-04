@@ -17,6 +17,8 @@ FROM debian:13-slim
 #   gnome-keyring    - the app saves its sign-in through libsecret; see
 #                      claude_desktop_entrypoint.sh
 #   dbus             - session bus for gnome-keyring to sit on
+# git, jq, less, ripgrep and poppler-utils are the claude image's extras, for
+# the Claude Code sessions the Code tab runs.
 # mesa/EGL are what Chromium's GPU process needs to come up on /dev/dri, same
 # as in the code image.
 RUN apt-get update && \
@@ -34,6 +36,10 @@ RUN apt-get update && \
         gnome-keyring \
         dbus \
         git \
+        jq \
+        less \
+        ripgrep \
+        poppler-utils \
         libegl1 \
         libgl1 \
         libgl1-mesa-dri \
