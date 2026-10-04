@@ -64,9 +64,13 @@ rm -f "${HOME}/.config/Claude/Singleton"{Lock,Socket,Cookie}
 # the container is the sandbox.
 # --password-store=gnome-libsecret: with no XDG_CURRENT_DESKTOP Chromium
 # would not look for a keyring at all and fall back to basic.
+# claude://code/new?folder=: the app's own deep link for a new Claude Code
+# session in a given folder, so every launch starts in the mounted workspace
+# instead of $HOME.
 exec /usr/lib/claude-desktop/claude-desktop \
     --no-sandbox \
     --password-store=gnome-libsecret \
     --ozone-platform=wayland \
     --enable-features=WaylandWindowDecorations \
+    "claude://code/new?folder=/workspace" \
     "$@"

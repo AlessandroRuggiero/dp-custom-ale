@@ -38,8 +38,18 @@ RUN apt-get update && \
         libgl1 \
         libgl1-mesa-dri \
         fonts-dejavu-core \
-        fonts-noto-color-emoji && \
+        fonts-noto-color-emoji \
+        gsettings-desktop-schemas \
+        libglib2.0-bin && \
     rm -rf /var/lib/apt/lists/*
+
+# The app draws its own title bar buttons from GTK's button layout. Nothing in
+# the container carries the host desktop's setting, so it falls back to
+# GNOME's schema default of 'appmenu:close': no minimize, and closing only
+# hides the app to a tray icon that cannot reach the host panel.
+RUN printf "[org.gnome.desktop.wm.preferences]\nbutton-layout='appmenu:minimize,maximize,close'\n" \
+        > /usr/share/glib-2.0/schemas/99_claude-desktop.gschema.override && \
+    glib-compile-schemas /usr/share/glib-2.0/schemas
 
 # Same reason as in the code image: the bind-mounted workspace is owned by a
 # UID git does not expect, and the Code tab's diff view goes blank.
