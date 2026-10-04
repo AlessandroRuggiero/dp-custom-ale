@@ -34,12 +34,21 @@ fi
 # every launch. Instead run a private dbus session with gnome-keyring on it.
 # The host session bus is still not shared in.
 #
-# The login keyring is created and unlocked with an empty password, so on
-# disk (~/.local/share/keyrings, a persisted mount) it is not encrypted. That
-# is the same trade the code image makes, with a real keyring API on top.
+# --unlock creates the login keyring on first run and unlocks it. The
+# password has to be non-empty: on empty stdin gnome-keyring skips the unlock
+# altogether, and the app then prompts to create a keyring of its own. Since
+# the password is fixed here, the keyring on disk (~/.local/share/keyrings, a
+# persisted mount) is effectively unencrypted. That is the same trade the code
+# image makes, with a real keyring API on top.
+#
+# The default alias is pinned to login so a keyring created from such a
+# prompt (which would start locked every launch) is never the one used.
+mkdir -p "${HOME}/.local/share/keyrings"
+printf 'login' > "${HOME}/.local/share/keyrings/default"
+
 export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
 dbus-daemon --session --fork --address="${DBUS_SESSION_BUS_ADDRESS}"
-printf '' | gnome-keyring-daemon --daemonize --unlock --components=secrets > /dev/null
+printf 'penguin' | gnome-keyring-daemon --daemonize --unlock --components=secrets > /dev/null
 
 # Chromium's single-instance lock is a symlink named after hostname-pid. Every
 # container gets a new hostname, so a lock left by a container that was
