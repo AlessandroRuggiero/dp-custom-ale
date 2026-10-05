@@ -6,9 +6,10 @@ on:
       - main
   pull_request:
   schedule:
-    # Daily. Dependabot tracks the Dockerfile, but the VS Code version and
-    # Fedora's in-place CVE rebuilds of the base tag are both invisible to
-    # it, so between commits nothing else would ever trigger a rebuild.
+    # Daily. Dependabot tracks the Dockerfiles, but the VS Code and Claude
+    # Desktop versions and Fedora's in-place CVE rebuilds of the base tag
+    # are all invisible to it, so between commits nothing else would ever
+    # trigger a rebuild.
     # 06:17 rather than 06:00 because on-the-hour crons sit in the most
     # contended slot of GitHub's scheduler and get delayed the longest.
     - cron: "17 6 * * *"
@@ -34,10 +35,13 @@ jobs:
     permissions:
       contents: read
       packages: read
+    # Labels are per image, keyed <image>_<label>, so the build step can look
+    # its own up. An image without a probe gets none.
     outputs:
       images: ${{ steps.collect.outputs.images }}
-      upstream_version: ${{ steps.upstream.outputs.upstream_version }}
-      base_digest: ${{ steps.upstream.outputs.base_digest }}
+      code_upstream_version: ${{ steps.upstream.outputs.upstream_version }}
+      code_base_digest: ${{ steps.upstream.outputs.base_digest }}
+      claude-desktop_upstream_version: ${{ steps.upstream_claude_desktop.outputs.upstream_version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -90,12 +94,28 @@ jobs:
             fedora:43 /src/.github/scripts/check-upstream-code.sh \
             | tee -a "$GITHUB_OUTPUT"
 
+      # Same idea for claude-desktop, whose app comes from Anthropic's apt
+      # repo. No container: curl, jq and skopeo are already on the runner.
+      - name: Probe upstream Claude Desktop version
+        id: upstream_claude_desktop
+        if: github.event_name != 'pull_request'
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}/claude-desktop
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          .github/scripts/check-upstream-claude-desktop.sh | tee -a "$GITHUB_OUTPUT"
+
       - name: Collect build matrix
         id: collect
         env:
           CHANGED: ${{ steps.filter.outputs.changes }}
-          STALE: ${{ steps.upstream.outputs.stale }}
-          REASON: ${{ steps.upstream.outputs.reason }}
+          CODE_STALE: ${{ steps.upstream.outputs.stale }}
+          CODE_REASON: ${{ steps.upstream.outputs.reason }}
+          CLAUDE_DESKTOP_STALE: ${{ steps.upstream_claude_desktop.outputs.stale }}
+          CLAUDE_DESKTOP_REASON: ${{ steps.upstream_claude_desktop.outputs.reason }}
         run: |
           set -euo pipefail
           case "${{ github.event_name }}" in
@@ -103,11 +123,14 @@ jobs:
               images="$CHANGED"
               ;;
             *)
-              # Only `code` has a probe script today. A second tool
-              # wanting scheduled rebuilds needs its own probe step and a
-              # per-tool split of the labels below.
-              if [ "$STALE" = "yes" ]; then images='["code"]'; else images='[]'; fi
-              echo "code: $REASON"
+              # Only images with a probe step get scheduled rebuilds. A new
+              # one needs its own probe step and job outputs above.
+              stale=()
+              if [ "$CODE_STALE" = "yes" ]; then stale+=(code); fi
+              if [ "$CLAUDE_DESKTOP_STALE" = "yes" ]; then stale+=(claude-desktop); fi
+              images=$(jq -cn '$ARGS.positional' --args "${stale[@]}")
+              echo "code: $CODE_REASON"
+              echo "claude-desktop: $CLAUDE_DESKTOP_REASON"
               ;;
           esac
           echo "images=$images" >> "$GITHUB_OUTPUT"
@@ -156,8 +179,8 @@ jobs:
           # whether anything moved.
           labels: |
             ${{ steps.meta.outputs.labels }}
-            dp.upstream.version=${{ needs.detect.outputs.upstream_version }}
-            dp.base.digest=${{ needs.detect.outputs.base_digest }}
+            dp.upstream.version=${{ needs.detect.outputs[format('{0}_upstream_version', matrix.image)] }}
+            dp.base.digest=${{ needs.detect.outputs[format('{0}_base_digest', matrix.image)] }}
           no-cache: true
           platforms: linux/amd64
           # Buildx would otherwise push an image index, and `skopeo inspect`
