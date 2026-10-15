@@ -57,6 +57,26 @@ printf 'penguin' | gnome-keyring-daemon --daemonize --unlock --components=secret
 # two containers launched at once would both run on the same profile.
 rm -f "${HOME}/.config/Claude/Singleton"{Lock,Socket,Cookie}
 
+# dp mounts every project at /workspace, so the sidebar would name every
+# session "workspace". The host folder behind the mount is listed in
+# mountinfo (field 4, with spaces and the like written as \0NN escapes), so
+# open the session through a link named after it instead. The link resolves
+# back to /workspace, which is what the trust in ~/.claude.json is keyed on.
+# Anything unexpected falls back to /workspace itself, as does a name that
+# is already taken in $HOME (the config mounts live there).
+folder=/workspace
+host_dir=$(awk '$5 == "/workspace" { print $4; exit }' /proc/self/mountinfo)
+name=$(printf '%b' "${host_dir##*/}")
+if [ -n "$name" ] && [ "$name" != "workspace" ] && [ "${name#.}" = "$name" ]; then
+    link="${HOME}/${name}"
+    if [ -L "$link" ] || [ ! -e "$link" ]; then
+        ln -sfn /workspace "$link"
+        folder=$link
+    fi
+fi
+# Escaped for the URL, but with the slashes left as they were before.
+folder_param=$(jq -rn --arg p "$folder" '$p | @uri | gsub("%2F"; "/")')
+
 # Exec the Electron binary, not a wrapper, so it stays in the foreground as
 # PID 1 and gets podman's SIGTERM directly.
 #
@@ -66,11 +86,11 @@ rm -f "${HOME}/.config/Claude/Singleton"{Lock,Socket,Cookie}
 # would not look for a keyring at all and fall back to basic.
 # claude://code/new?folder=: the app's own deep link for a new Claude Code
 # session in a given folder, so every launch starts in the mounted workspace
-# instead of $HOME.
+# (through the link above) instead of $HOME.
 exec /usr/lib/claude-desktop/claude-desktop \
     --no-sandbox \
     --password-store=gnome-libsecret \
     --ozone-platform=wayland \
     --enable-features=WaylandWindowDecorations \
-    "claude://code/new?folder=/workspace" \
+    "claude://code/new?folder=${folder_param}" \
     "$@"
