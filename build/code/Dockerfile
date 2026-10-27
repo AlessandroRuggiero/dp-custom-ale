@@ -100,6 +100,11 @@ RUN /usr/local/bin/setup-penguin.sh
 # switches to zsh. The integrated terminal opens the user's login shell.
 RUN usermod -s /bin/zsh penguin
 
+# vs-code mounts only .vscode-container/data, so the parent must already be
+# penguin's or the ephemeral extensions dir beside it can't be created.
+RUN mkdir -p /home/penguin/.vscode-container && \
+    chown -R penguin:penguin /home/penguin
+
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY code/code_entrypoint.sh /usr/local/bin/code_entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/code_entrypoint.sh

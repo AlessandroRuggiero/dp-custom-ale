@@ -5,6 +5,7 @@ Everything is automatically built and published on the GitHub container registry
 
 ## Available packages
 - `code` (VS Code, Wayland-only GUI)
+- `vs-code` (same image as `code`, but extensions start clean on every launch; settings are kept)
 - `claude` (Claude Code CLI)
 - `claude-desktop` (Claude Desktop app, Wayland-only GUI)
 
