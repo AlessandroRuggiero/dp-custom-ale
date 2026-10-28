@@ -4,7 +4,12 @@
         "configmounts": {
             "vscodeconfig": "/home/penguin/.vscode-container/",
             "config": "/home/penguin/.config/",
-            "cache": "/home/penguin/.cache/"
+            "cache": "/home/penguin/.cache/",
+            "dot_claude": "/home/penguin/.claude/",
+            "dot_claude_file": {
+                "path": "/home/penguin/.claude.json",
+                "type": "file"
+            }
         },
         "extra_run_args": [
             {
@@ -67,7 +72,12 @@
         "configmounts": {
             "vscodedata": "/home/penguin/.vscode-container/data/",
             "config": "/home/penguin/.config/",
-            "cache": "/home/penguin/.cache/"
+            "cache": "/home/penguin/.cache/",
+            "dot_claude": "/home/penguin/.claude/",
+            "dot_claude_file": {
+                "path": "/home/penguin/.claude.json",
+                "type": "file"
+            }
         },
         "extra_run_args": [
             {

@@ -42,6 +42,7 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
         pango \
         alsa-lib \
         xdg-utils \
+        gsettings-desktop-schemas \
         fontconfig \
         google-noto-sans-fonts \
         google-noto-sans-mono-fonts \
@@ -51,6 +52,12 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
         liberation-mono-fonts && \
     dnf clean all && \
     rm -rf /var/cache/dnf
+
+# Same fix as claude-desktop: GNOME's default button layout is 'appmenu:close',
+# so the window would have no minimize or maximize button.
+RUN printf "[org.gnome.desktop.wm.preferences]\nbutton-layout='appmenu:minimize,maximize,close'\n" \
+        > /usr/share/glib-2.0/schemas/99_code.gschema.override && \
+    glib-compile-schemas /usr/share/glib-2.0/schemas
 
 # Starship prompt, via its official installer (not packaged in Fedora's main
 # repos). Lands in /usr/local/bin; its config is ~/.config/starship.toml,
@@ -102,7 +109,7 @@ RUN usermod -s /bin/zsh penguin
 
 # vs-code mounts only .vscode-container/data, so the parent must already be
 # penguin's or the ephemeral extensions dir beside it can't be created.
-RUN mkdir -p /home/penguin/.vscode-container && \
+RUN mkdir -p /home/penguin/.vscode-container /home/penguin/.claude && \
     chown -R penguin:penguin /home/penguin
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
