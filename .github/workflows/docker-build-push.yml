@@ -6,13 +6,15 @@ on:
       - main
   pull_request:
   schedule:
-    # Daily. Dependabot tracks the Dockerfiles, but the VS Code and Claude
+    # Twice daily. Dependabot tracks the Dockerfiles, but the VS Code and Claude
     # Desktop versions and Fedora's in-place CVE rebuilds of the base tag
     # are all invisible to it, so between commits nothing else would ever
-    # trigger a rebuild.
+    # trigger a rebuild. The detection job only builds images whose upstream
+    # version has changed.
     # 06:17 rather than 06:00 because on-the-hour crons sit in the most
     # contended slot of GitHub's scheduler and get delayed the longest.
     - cron: "17 6 * * *"
+    - cron: "17 18 * * *"
   workflow_dispatch:
     inputs:
       force:
