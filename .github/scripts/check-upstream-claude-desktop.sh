@@ -50,7 +50,7 @@ fi
 
 # As in check-upstream-code.sh: a missing image and a registry hiccup look
 # the same here, and both get a build.
-published=$(skopeo inspect "${creds[@]}" "docker://$IMAGE:$TAG" 2>/dev/null) || published=""
+published=$(skopeo inspect "${creds[@]}" "docker://$IMAGE:$TAG") || published=""
 if [ -n "$published" ]; then
     cur_upstream=$(jq -r '(.Labels // {})["dp.upstream.version"] // ""' <<<"$published")
 else

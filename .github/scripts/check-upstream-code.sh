@@ -88,7 +88,7 @@ fi
 # indistinguishable from it at this point, and both want the same answer:
 # build. A redundant build costs a few CI minutes; a skipped one ships a
 # stale editor until someone notices.
-published=$(skopeo inspect "${creds[@]}" "docker://$IMAGE:$TAG" 2>/dev/null) || published=""
+published=$(skopeo inspect "${creds[@]}" "docker://$IMAGE:$TAG") || published=""
 if [ -n "$published" ]; then
     cur_upstream=$(jq -r '(.Labels // {})["dp.upstream.version"] // ""' <<<"$published")
     cur_base=$(jq -r '(.Labels // {})["dp.base.digest"] // ""' <<<"$published")
