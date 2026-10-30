@@ -31,6 +31,8 @@ set -euo pipefail
 log() { printf '%s\n' "$*" >&2; }
 
 : "${IMAGE:?IMAGE must be set (e.g. ghcr.io/owner/repo/code)}"
+# github.repository keeps the owner's capitals, which skopeo rejects.
+IMAGE="${IMAGE,,}"
 TAG="${TAG:-main}"
 DOCKERFILE="${DOCKERFILE:-/src/build/code/Dockerfile}"
 
