@@ -82,18 +82,16 @@ if [ -n "${GHCR_USER:-}" ]; then
     creds=(--creds "$GHCR_USER:${GHCR_TOKEN:-}")
 fi
 
-# A missing image means the first ever run. A registry hiccup is
-# indistinguishable from it at this point, and both want the same answer:
-# build. A redundant build costs a few CI minutes; a skipped one ships a
-# stale editor until someone notices.
-published=$(skopeo inspect "${creds[@]}" "docker://$IMAGE:$TAG" 2>/dev/null) || published=""
-if [ -n "$published" ]; then
-    cur_upstream=$(jq -r '(.Labels // {})["dp.upstream.version"] // ""' <<<"$published")
-    cur_base=$(jq -r '(.Labels // {})["dp.base.digest"] // ""' <<<"$published")
-else
-    cur_upstream=""
-    cur_base=""
+inspect_error=$(mktemp)
+if ! published=$(skopeo inspect "${creds[@]}" "docker://$IMAGE:$TAG" 2>"$inspect_error"); then
+    log "Unable to inspect published $IMAGE:$TAG:"
+    sed 's/^/  /' "$inspect_error" >&2
+    rm -f "$inspect_error"
+    exit 1
 fi
+rm -f "$inspect_error"
+cur_upstream=$(jq -r '(.Labels // {})["dp.upstream.version"] // ""' <<<"$published")
+cur_base=$(jq -r '(.Labels // {})["dp.base.digest"] // ""' <<<"$published")
 log "Published $TAG: upstream=${cur_upstream:-<none>} base=${cur_base:-<none>}"
 
 # --- Verdict ----------------------------------------------------------------
