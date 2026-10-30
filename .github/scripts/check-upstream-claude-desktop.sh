@@ -25,6 +25,8 @@ set -euo pipefail
 log() { printf '%s\n' "$*" >&2; }
 
 : "${IMAGE:?IMAGE must be set (e.g. ghcr.io/owner/repo/claude-desktop)}"
+# github.repository keeps the owner's capitals, which skopeo rejects.
+IMAGE="${IMAGE,,}"
 TAG="${TAG:-main}"
 # amd64 because that is the only platform the workflow builds.
 INDEX="${INDEX:-https://downloads.claude.ai/claude-desktop/apt/stable/dists/stable/main/binary-amd64/Packages}"
