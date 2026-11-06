@@ -1,6 +1,7 @@
 {
     "code": {
         "container": "ghcr.io/alessandroruggiero/dp-custom-ale/code:main",
+        "app": true,
         "configmounts": {
             "vscodeconfig": "/home/penguin/.vscode-container/",
             "config": "/home/penguin/.config/",
@@ -12,40 +13,6 @@
             }
         },
         "extra_run_args": [
-            {
-                "args": [
-                    "-e",
-                    "WAYLAND_DISPLAY=wayland-0",
-                    "-e",
-                    "XDG_RUNTIME_DIR=/run/user/1000",
-                    "--tmpfs",
-                    "/run/user/1000:rw,mode=1777,size=64m",
-                    "-v",
-                    "/run/user/1000/wayland-0:/run/user/1000/wayland-0"
-                ],
-                "description": "Passes your Wayland socket in so VS Code can open a window. The tmpfs gives VS Code a writable XDG_RUNTIME_DIR for its IPC socket; only the single compositor socket is shared, not the rest of /run/user"
-            },
-            {
-                "args": [
-                    "--device",
-                    "/dev/dri"
-                ],
-                "description": "GPU access for hardware-accelerated rendering; without it Electron falls back to software rendering or fails to start"
-            },
-            {
-                "args": [
-                    "--security-opt",
-                    "label=disable"
-                ],
-                "description": "Disables SELinux confinement for this container only. The Wayland socket is labelled user_tmp_t on the host, which a confined container cannot reach, so VS Code would fail to connect to your display"
-            },
-            {
-                "args": [
-                    "--tmpfs",
-                    "/dev/shm:rw,size=1g"
-                ],
-                "description": "Chromium uses shared memory for cross-process IPC and crashes once the 64MB default is exhausted"
-            },
             {
                 "args": [
                     "--security-opt",
@@ -69,6 +36,7 @@
     },
     "vs-code": {
         "container": "ghcr.io/alessandroruggiero/dp-custom-ale/code:main",
+        "app": true,
         "configmounts": {
             "vscodedata": "/home/penguin/.vscode-container/data/",
             "config": "/home/penguin/.config/",
@@ -80,40 +48,6 @@
             }
         },
         "extra_run_args": [
-            {
-                "args": [
-                    "-e",
-                    "WAYLAND_DISPLAY=wayland-0",
-                    "-e",
-                    "XDG_RUNTIME_DIR=/run/user/1000",
-                    "--tmpfs",
-                    "/run/user/1000:rw,mode=1777,size=64m",
-                    "-v",
-                    "/run/user/1000/wayland-0:/run/user/1000/wayland-0"
-                ],
-                "description": "Passes your Wayland socket in so VS Code can open a window. The tmpfs gives VS Code a writable XDG_RUNTIME_DIR for its IPC socket; only the single compositor socket is shared, not the rest of /run/user"
-            },
-            {
-                "args": [
-                    "--device",
-                    "/dev/dri"
-                ],
-                "description": "GPU access for hardware-accelerated rendering; without it Electron falls back to software rendering or fails to start"
-            },
-            {
-                "args": [
-                    "--security-opt",
-                    "label=disable"
-                ],
-                "description": "Disables SELinux confinement for this container only. The Wayland socket is labelled user_tmp_t on the host, which a confined container cannot reach, so VS Code would fail to connect to your display"
-            },
-            {
-                "args": [
-                    "--tmpfs",
-                    "/dev/shm:rw,size=1g"
-                ],
-                "description": "Chromium uses shared memory for cross-process IPC and crashes once the 64MB default is exhausted"
-            },
             {
                 "args": [
                     "--security-opt",
@@ -147,6 +81,7 @@
     },
     "claude-desktop": {
         "container": "ghcr.io/alessandroruggiero/dp-custom-ale/claude-desktop:main",
+        "app": true,
         "configmounts": {
             "config": "/home/penguin/.config/",
             "cache": "/home/penguin/.cache/",
@@ -158,40 +93,6 @@
             }
         },
         "extra_run_args": [
-            {
-                "args": [
-                    "-e",
-                    "WAYLAND_DISPLAY=wayland-0",
-                    "-e",
-                    "XDG_RUNTIME_DIR=/run/user/1000",
-                    "--tmpfs",
-                    "/run/user/1000:rw,mode=1777,size=64m",
-                    "-v",
-                    "/run/user/1000/wayland-0:/run/user/1000/wayland-0"
-                ],
-                "description": "Passes your Wayland socket in so Claude Desktop can open a window. The tmpfs is a writable XDG_RUNTIME_DIR for the container-private session bus that holds its keyring; only the single compositor socket is shared, not the rest of /run/user"
-            },
-            {
-                "args": [
-                    "--device",
-                    "/dev/dri"
-                ],
-                "description": "GPU access for hardware-accelerated rendering; without it Electron falls back to software rendering or fails to start"
-            },
-            {
-                "args": [
-                    "--security-opt",
-                    "label=disable"
-                ],
-                "description": "Disables SELinux confinement for this container only. The Wayland socket is labelled user_tmp_t on the host, which a confined container cannot reach, so Claude Desktop would fail to connect to your display"
-            },
-            {
-                "args": [
-                    "--tmpfs",
-                    "/dev/shm:rw,size=1g"
-                ],
-                "description": "Chromium uses shared memory for cross-process IPC and crashes once the 64MB default is exhausted"
-            },
             {
                 "args": [
                     "--security-opt",

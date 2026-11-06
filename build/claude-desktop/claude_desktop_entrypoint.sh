@@ -21,7 +21,7 @@ if [ -n "${DISPLAY:-}" ]; then
     exit 1
 fi
 
-# The session bus socket goes in XDG_RUNTIME_DIR, which the run args mount
+# The session bus socket goes in XDG_RUNTIME_DIR, which dp mounts (app: true)
 # as a tmpfs.
 if [ ! -w "${XDG_RUNTIME_DIR}" ]; then
     echo "entrypoint: ${XDG_RUNTIME_DIR} is not writable by $(id -un) — cannot create the session bus." >&2

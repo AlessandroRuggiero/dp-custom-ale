@@ -24,7 +24,7 @@ fi
 
 # VS Code creates its IPC socket (vscode-*-main.sock) in XDG_RUNTIME_DIR.
 # That directory must be writable by this user or startup dies with
-# "Error: listen EACCES" — the run script mounts a tmpfs there with
+# "Error: listen EACCES" — dp (app: true) mounts a tmpfs there with
 # matching uid/gid to satisfy it.
 if [ ! -w "${XDG_RUNTIME_DIR}" ]; then
     echo "entrypoint: ${XDG_RUNTIME_DIR} is not writable by $(id -un) — VS Code cannot create its IPC socket." >&2
